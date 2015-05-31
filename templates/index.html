@@ -1,0 +1,109 @@
+<!DOCTYPE HTML5>
+<html>
+<head>
+    <title>Tornado Celery Queuing</title>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.2/lumen/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tornado Celery Queuing</h1>
+        <div class="col-lg-12">
+            <h4 class="" id="mssg" style="padding:5px 0px;">
+                Connection Logs
+            </h4>
+            <div class="col-lg-12 well" id="connLogs">
+                Not Connected
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <h4 class="" id="mssg" style="padding:5px 0px;">
+                Task Logs
+            </h4>
+            <div class="col-lg-12 well" id="taskLogs">
+                Null
+            </div>
+            <div class="col-lg-12 well" id="numTasks" data-num="0">
+                Number of tasks in queue: 0
+            </div>
+            <a class="btn btn-primary btn-lg col-lg-12" style="cursor:pointer;" id="addTask">Add a task</a>
+        </div>
+        <div class="col-lg-8">
+            <h4 class="" id="mssg" style="padding:5px 0px;">
+                Queue Logs
+            </h4>
+            <div class="col-lg-12 well" id="queueLogs" style="height:300px; overflow-y:auto;">
+                Null
+            </div>
+            <a class="btn btn-primary btn-lg col-lg-12" style="cursor:pointer;" id="getInfo">Get Queue</a>
+        </div>
+    </div>
+</body>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sockjs-client/0.3.4/sockjs.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            conn = new SockJS(window.location.protocol + '//' + window.location.host + '/wsconn');
+            connFlag = false
+
+            conn.onopen = function() {
+                console.log('Connected.');
+                connFlag = true
+                $('#connLogs').text('connected')
+            };
+
+            conn.onmessage = function(e) {
+//                 console.log('Received: ' + e.data);
+//                 $('#mssg').text(e.data);
+                switch (e.data['type']) {
+                    case "connectionLogs":
+                        $('#connLogs').text(e.data['resp'])
+                        break; 
+                    case "taskCompletionData":
+                        jsonObj = JSON.parse(e.data['resp'])
+                        var html="<b>Last completed task info:</b><br/><br/><b>Task-id </b>:" + jsonObj[0] + " <br/>";
+//                         <b>Task start time </b>:" + jsonObj[1] + " <br/><b>Task end time </b>:" + jsonObj[2] + " <br/>
+                        numTasks = parseInt($("#numTasks").attr('data-num')) - 1
+                        $("#numTasks").text('Number of tasks in queue: ' + numTasks)
+                        $("#numTasks").attr('data-num',numTasks)
+                        $('#taskLogs').html(html);
+                        break;
+                    case "queuedList":
+                        jsonObj = JSON.parse(e.data['resp'])
+                        html = "<pre>" + JSON.stringify(jsonObj, undefined, 10) + "</pre>";
+                        $('#queueLogs').html(html);
+                        break;
+                    default: 
+                        console.log(e.data)
+                }
+            };
+
+            conn.onclose = function() {
+                console.log('Disconnected.');
+                conn = null;
+            };
+            
+            $('#addTask').on('click',function(){
+                if (!connFlag){
+                    alert('not connected !!! wait till conection logs shows connected');
+                }else{
+                    console.log('adding task');
+                    numTasks = parseInt($("#numTasks").attr('data-num')) + 1
+                    conn.send("doTask");
+                    $("#numTasks").text('Number of tasks in queue: ' + numTasks);
+                    $("#numTasks").attr('data-num',numTasks);   
+                }
+            });
+            
+            $('#getInfo').on('click',function(){
+                if (!connFlag){
+                    alert('not connected !!! wait till conection logs shows connected')
+                }else{
+                    console.log('getting queue');
+                    conn.send("getQueue");
+                }
+            });
+
+        });
+    </script>
+</html>
