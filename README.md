@@ -3,7 +3,7 @@ Tornado Celery Queuing App
 
 > This is just a test app implementing a queuing service using Celery (Using AMQP) and Python Tornado. In addition to the above tornado-celery was used to connect tornado and celery.
 
-##### [App's Local Working Screenshot and Explanation](http://tornado-queue.herokuapp.com/)
+##### [App's Local Working Screenshot and Explanation](http://tornadoque.rajeev-reddy.com/)
 
 ##### Note: To run this app locally you need to have install amqp (messaging)
 
